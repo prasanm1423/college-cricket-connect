@@ -1,20 +1,13 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Calendar, Search } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { supabase } from "@/integrations/supabase/client";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -41,46 +34,24 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PageHeader from "@/components/shared/PageHeader";
-import { useAuth } from "@/components/auth/AuthProvider";
-import { supabase } from "@/integrations/supabase/client";
 
-// Mock data for tournaments until we set up the database
-const mockTournaments = [
-  {
-    id: "t1",
-    name: "College Premier League 2023",
-    startDate: "2023-06-15",
-    endDate: "2023-07-30",
-    location: "Delhi University Stadium",
-    status: "completed",
-    teamCount: 8
-  },
-  {
-    id: "t2",
-    name: "Inter-College Cup 2024",
-    startDate: "2024-03-10",
-    endDate: "2024-04-25",
-    location: "Mumbai University Ground",
-    status: "ongoing",
-    teamCount: 12
-  },
-  {
-    id: "t3",
-    name: "University Championship 2024",
-    startDate: "2024-09-05",
-    endDate: "2024-10-20",
-    location: "Chennai Central Stadium",
-    status: "upcoming",
-    teamCount: 16
-  }
-];
+type Tournament = {
+  id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  location: string;
+  status: 'upcoming' | 'ongoing' | 'completed';
+  team_count: number;
+  created_by: string;
+};
 
 const Tournaments = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   
-  const [tournaments, setTournaments] = useState(mockTournaments);
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
@@ -91,12 +62,30 @@ const Tournaments = () => {
   const [location, setLocation] = useState("");
   const [teamCount, setTeamCount] = useState("8");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Filter tournaments based on search term
-  const filteredTournaments = tournaments.filter(tournament => 
-    tournament.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    tournament.location.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+
+  // Fetch tournaments from Supabase
+  useEffect(() => {
+    fetchTournaments();
+  }, []);
+
+  const fetchTournaments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tournaments')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setTournaments(data || []);
+    } catch (error) {
+      console.error('Error fetching tournaments:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load tournaments. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
   
   const handleCreateTournament = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,24 +101,24 @@ const Tournaments = () => {
     
     setIsSubmitting(true);
     
-    const newTournament = {
-      id: `t${tournaments.length + 1}`,
-      name: tournamentName,
-      startDate,
-      endDate,
-      location,
-      status: "upcoming",
-      teamCount: parseInt(teamCount)
-    };
-    
-    // In a real implementation, we would save this to Supabase
-    // For now, we'll just update our local state
-    
     try {
-      // Simulate an API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { data, error } = await supabase
+        .from('tournaments')
+        .insert([{
+          name: tournamentName,
+          start_date: startDate,
+          end_date: endDate,
+          location,
+          status: 'upcoming',
+          team_count: parseInt(teamCount),
+          created_by: user.id
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
       
-      setTournaments([...tournaments, newTournament]);
+      setTournaments([data, ...tournaments]);
       
       toast({
         title: "Tournament created",
@@ -157,6 +146,12 @@ const Tournaments = () => {
     }
   };
   
+  // Filter tournaments based on search term
+  const filteredTournaments = tournaments.filter(tournament => 
+    tournament.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    tournament.location.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div>
       <PageHeader
@@ -297,10 +292,10 @@ const Tournaments = () => {
                   <TableRow key={tournament.id}>
                     <TableCell className="font-medium">{tournament.name}</TableCell>
                     <TableCell>
-                      {new Date(tournament.startDate).toLocaleDateString()} - {new Date(tournament.endDate).toLocaleDateString()}
+                      {new Date(tournament.start_date).toLocaleDateString()} - {new Date(tournament.end_date).toLocaleDateString()}
                     </TableCell>
                     <TableCell>{tournament.location}</TableCell>
-                    <TableCell>{tournament.teamCount}</TableCell>
+                    <TableCell>{tournament.team_count}</TableCell>
                     <TableCell>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         tournament.status === "upcoming" ? "bg-blue-100 text-blue-800" :
@@ -351,10 +346,10 @@ const Tournaments = () => {
                   <TableRow key={tournament.id}>
                     <TableCell className="font-medium">{tournament.name}</TableCell>
                     <TableCell>
-                      {new Date(tournament.startDate).toLocaleDateString()} - {new Date(tournament.endDate).toLocaleDateString()}
+                      {new Date(tournament.start_date).toLocaleDateString()} - {new Date(tournament.end_date).toLocaleDateString()}
                     </TableCell>
                     <TableCell>{tournament.location}</TableCell>
-                    <TableCell>{tournament.teamCount}</TableCell>
+                    <TableCell>{tournament.team_count}</TableCell>
                     <TableCell className="text-right">
                       <Button 
                         variant="outline" 
@@ -396,10 +391,10 @@ const Tournaments = () => {
                   <TableRow key={tournament.id}>
                     <TableCell className="font-medium">{tournament.name}</TableCell>
                     <TableCell>
-                      {new Date(tournament.startDate).toLocaleDateString()} - {new Date(tournament.endDate).toLocaleDateString()}
+                      {new Date(tournament.start_date).toLocaleDateString()} - {new Date(tournament.end_date).toLocaleDateString()}
                     </TableCell>
                     <TableCell>{tournament.location}</TableCell>
-                    <TableCell>{tournament.teamCount}</TableCell>
+                    <TableCell>{tournament.team_count}</TableCell>
                     <TableCell className="text-right">
                       <Button 
                         variant="outline" 
@@ -441,10 +436,10 @@ const Tournaments = () => {
                   <TableRow key={tournament.id}>
                     <TableCell className="font-medium">{tournament.name}</TableCell>
                     <TableCell>
-                      {new Date(tournament.startDate).toLocaleDateString()} - {new Date(tournament.endDate).toLocaleDateString()}
+                      {new Date(tournament.start_date).toLocaleDateString()} - {new Date(tournament.end_date).toLocaleDateString()}
                     </TableCell>
                     <TableCell>{tournament.location}</TableCell>
-                    <TableCell>{tournament.teamCount}</TableCell>
+                    <TableCell>{tournament.team_count}</TableCell>
                     <TableCell className="text-right">
                       <Button 
                         variant="outline" 
