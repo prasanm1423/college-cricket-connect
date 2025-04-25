@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -23,6 +22,8 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import PageHeader from "@/components/shared/PageHeader";
 
 import { players, teams, matches } from "@/data/mockData";
