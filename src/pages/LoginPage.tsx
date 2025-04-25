@@ -2,37 +2,54 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, LogIn } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
     
-    // For demonstration purposes, we'll simulate a login
-    setTimeout(() => {
-      // Mock authentication - in a real app this would validate against a database
-      if (email === "admin@example.com" && password === "password") {
-        // Successful login
-        navigate("/");
+    try {
+      const { data, error: loginError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (loginError) {
+        setError(loginError.message);
+        toast({
+          title: "Login failed",
+          description: loginError.message,
+          variant: "destructive",
+        });
       } else {
-        // Failed login
-        setError("Invalid email or password. Try admin@example.com / password");
+        toast({
+          title: "Login successful",
+          description: "Welcome back!",
+        });
+        navigate("/");
       }
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("An unexpected error occurred. Please try again.");
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
   
   return (

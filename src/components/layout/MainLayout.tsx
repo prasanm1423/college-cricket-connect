@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Link, useLocation, Outlet } from "react-router-dom";
+import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { 
   Home, 
@@ -15,6 +15,9 @@ import {
   X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { supabase } from "@/integrations/supabase/client";
 
 type NavItemProps = {
   to: string;
@@ -42,16 +45,26 @@ const NavItem = ({ to, icon: Icon, label, isActive }: NavItemProps) => {
 
 const MainLayout = () => {
   const location = useLocation();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const navigate = useNavigate();
+  const { user, isLoading } = useAuth();
+  const { toast } = useToast();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // Dummy authentication for now
-  const handleLogin = () => {
-    setIsLoggedIn(true);
-  };
-  
-  const handleLogout = () => {
-    setIsLoggedIn(false);
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Logged out successfully",
+      });
+      navigate("/login");
+    } catch (error) {
+      console.error("Error during logout:", error);
+      toast({
+        title: "Logout failed",
+        description: "An error occurred while logging out. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const toggleMobileMenu = () => {
@@ -118,12 +131,18 @@ const MainLayout = () => {
             isActive={location.pathname.startsWith("/matches")} 
           />
           <NavItem 
+            to="/tournaments" 
+            icon={Calendar} 
+            label="Tournaments" 
+            isActive={location.pathname.startsWith("/tournaments")} 
+          />
+          <NavItem 
             to="/leaderboard" 
             icon={BarChart} 
             label="Leaderboard" 
             isActive={location.pathname.startsWith("/leaderboard")} 
           />
-          {isLoggedIn && (
+          {user && (
             <NavItem 
               to="/admin" 
               icon={Settings} 
@@ -134,7 +153,9 @@ const MainLayout = () => {
         </nav>
         
         <div className="p-4 border-t border-gray-200">
-          {isLoggedIn ? (
+          {isLoading ? (
+            <div className="w-full h-10 bg-gray-100 rounded-md animate-pulse"></div>
+          ) : user ? (
             <button
               onClick={handleLogout}
               className="w-full flex items-center gap-2 px-4 py-2 rounded-md bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
