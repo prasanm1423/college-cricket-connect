@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -104,6 +103,9 @@ export default {
       backgroundImage: {
         'cricket-pattern': "url('/cricket-bg.png')",
         'pitch': "linear-gradient(to right, #9DCE5C, #D2B48C, #9DCE5C)",
+      },
+      scale: {
+        '102': '1.02',
       }
     }
   },
