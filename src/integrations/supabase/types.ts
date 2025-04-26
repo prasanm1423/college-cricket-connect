@@ -9,6 +9,129 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      matches: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          date: string
+          id: string
+          status: string
+          team1_id: string
+          team2_id: string
+          tournament_id: string | null
+          venue: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          date: string
+          id?: string
+          status: string
+          team1_id: string
+          team2_id: string
+          tournament_id?: string | null
+          venue: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          date?: string
+          id?: string
+          status?: string
+          team1_id?: string
+          team2_id?: string
+          tournament_id?: string | null
+          venue?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matches_team1_id_fkey"
+            columns: ["team1_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_team2_id_fkey"
+            columns: ["team2_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      players: {
+        Row: {
+          age: number
+          college: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          name: string
+          role: string
+          team_id: string | null
+        }
+        Insert: {
+          age: number
+          college: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          name: string
+          role: string
+          team_id?: string | null
+        }
+        Update: {
+          age?: number
+          college?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          name?: string
+          role?: string
+          team_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "players_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          college: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          college: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          college?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       tournaments: {
         Row: {
           created_at: string | null
