@@ -29,13 +29,15 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 
+type MatchStatus = "upcoming" | "live" | "completed";
+
 type Match = {
   id: string;
   team1_id: string;
   team2_id: string;
   venue: string;
   date: string;
-  status: "upcoming" | "live" | "completed";
+  status: MatchStatus;
   tournament_id?: string;
   team1?: { name: string; college: string };
   team2?: { name: string; college: string };
@@ -82,7 +84,9 @@ const Matches = () => {
             venue, 
             date, 
             status,
-            tournament_id
+            tournament_id,
+            created_at,
+            created_by
           `)
           .order('date', { ascending: false });
 
@@ -97,13 +101,17 @@ const Matches = () => {
         
         setTeams(teamsData || []);
         
-        // Map team details to matches
+        // Map team details to matches and ensure status is a valid MatchStatus
         const matchesWithTeamDetails = matchesData?.map(match => {
           const team1 = teamsData?.find(team => team.id === match.team1_id);
           const team2 = teamsData?.find(team => team.id === match.team2_id);
           
+          // Ensure status is a valid MatchStatus type
+          const status = validateMatchStatus(match.status);
+          
           return {
             ...match,
+            status,
             team1,
             team2
           };
@@ -124,6 +132,14 @@ const Matches = () => {
 
     fetchData();
   }, [toast]);
+  
+  // Helper function to validate match status
+  const validateMatchStatus = (status: string): MatchStatus => {
+    if (status === "upcoming" || status === "live" || status === "completed") {
+      return status;
+    }
+    return "upcoming"; // Default to upcoming if invalid status
+  };
   
   const handleCreateMatch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -159,7 +175,7 @@ const Matches = () => {
           team2_id: team2Id,
           venue,
           date: dateTime,
-          status: 'upcoming',
+          status: 'upcoming' as MatchStatus,
           created_by: user.id
         }])
         .select()
@@ -175,6 +191,7 @@ const Matches = () => {
       setMatches([
         {
           ...data,
+          status: validateMatchStatus(data.status),
           team1,
           team2
         },

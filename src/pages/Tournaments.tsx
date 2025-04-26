@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Calendar, Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,15 +36,19 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PageHeader from "@/components/shared/PageHeader";
 
+type TournamentStatus = 'upcoming' | 'ongoing' | 'completed';
+
 type Tournament = {
   id: string;
   name: string;
   start_date: string;
   end_date: string;
   location: string;
-  status: 'upcoming' | 'ongoing' | 'completed';
+  status: TournamentStatus;
   team_count: number;
   created_by: string;
+  created_at?: string;
+  updated_at?: string;
 };
 
 const Tournaments = () => {
@@ -54,6 +59,7 @@ const Tournaments = () => {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
   // Form state for creating tournament
   const [tournamentName, setTournamentName] = useState("");
@@ -69,6 +75,7 @@ const Tournaments = () => {
   }, []);
 
   const fetchTournaments = async () => {
+    setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from('tournaments')
@@ -76,7 +83,14 @@ const Tournaments = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setTournaments(data || []);
+      
+      // Map and validate tournament status
+      const validatedTournaments = (data || []).map(tournament => ({
+        ...tournament,
+        status: validateTournamentStatus(tournament.status)
+      }));
+      
+      setTournaments(validatedTournaments);
     } catch (error) {
       console.error('Error fetching tournaments:', error);
       toast({
@@ -84,7 +98,17 @@ const Tournaments = () => {
         description: "Failed to load tournaments. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
+  };
+  
+  // Helper function to validate tournament status
+  const validateTournamentStatus = (status: string): TournamentStatus => {
+    if (status === "upcoming" || status === "ongoing" || status === "completed") {
+      return status;
+    }
+    return "upcoming"; // Default to upcoming if invalid status
   };
   
   const handleCreateTournament = async (e: React.FormEvent) => {
@@ -118,7 +142,13 @@ const Tournaments = () => {
 
       if (error) throw error;
       
-      setTournaments([data, ...tournaments]);
+      setTournaments([
+        {
+          ...data,
+          status: validateTournamentStatus(data.status)
+        },
+        ...tournaments
+      ]);
       
       toast({
         title: "Tournament created",
@@ -151,6 +181,10 @@ const Tournaments = () => {
     tournament.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     tournament.location.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (isLoading) {
+    return <div className="p-8 text-center">Loading tournaments...</div>;
+  }
 
   return (
     <div>
