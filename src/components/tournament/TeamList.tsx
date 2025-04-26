@@ -25,10 +25,36 @@ export const TeamList = ({ teams, tournamentId, onTeamRemoved }: TeamListProps) 
 
   const handleRemoveTeam = async (teamId: string) => {
     try {
+      // Check if the team exists in the tournament_teams table
+      const { data: existingTeam, error: checkError } = await supabase
+        .from('tournament_teams')
+        .select('*')
+        .eq('tournament_id', tournamentId)
+        .eq('team_id', teamId)
+        .single();
+        
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is the error code for no rows returned
+        throw checkError;
+      }
+      
+      // If the team doesn't exist in the tournament_teams table, show error
+      if (!existingTeam) {
+        toast({
+          title: "Error",
+          description: "Team is not associated with this tournament in the database",
+          variant: "destructive",
+        });
+        // Refresh the team list to remove any stale data
+        onTeamRemoved();
+        return;
+      }
+      
+      // If the team exists, proceed with removal
       const { error } = await supabase
         .from('tournament_teams')
         .delete()
-        .match({ tournament_id: tournamentId, team_id: teamId });
+        .eq('tournament_id', tournamentId)
+        .eq('team_id', teamId);
 
       if (error) throw error;
 
@@ -50,35 +76,41 @@ export const TeamList = ({ teams, tournamentId, onTeamRemoved }: TeamListProps) 
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-      {teams.map((team) => (
-        <Card key={team.id} className="p-4">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
-                <Shield className="h-5 w-5 text-white" />
+      {teams.length > 0 ? (
+        teams.map((team) => (
+          <Card key={team.id} className="p-4">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
+                  <Shield className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">{team.name}</h3>
+                  <p className="text-sm text-muted-foreground">{team.college}</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold">{team.name}</h3>
-                <p className="text-sm text-muted-foreground">{team.college}</p>
-              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleRemoveTeam(team.id)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
             <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handleRemoveTeam(team.id)}
+              variant="outline"
+              className="w-full mt-4"
+              onClick={() => navigate(`/teams/${team.id}`)}
             >
-              <X className="h-4 w-4" />
+              View Team
             </Button>
-          </div>
-          <Button
-            variant="outline"
-            className="w-full mt-4"
-            onClick={() => navigate(`/teams/${team.id}`)}
-          >
-            View Team
-          </Button>
-        </Card>
-      ))}
+          </Card>
+        ))
+      ) : (
+        <div className="col-span-full text-center p-8 bg-muted rounded-md">
+          <p className="text-muted-foreground">No teams added to this tournament yet.</p>
+        </div>
+      )}
     </div>
   );
 };

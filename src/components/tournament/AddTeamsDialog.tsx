@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -31,13 +32,19 @@ export const AddTeamsDialog = ({ tournamentId, onTeamsAdded }: AddTeamsDialogPro
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
 
   useEffect(() => {
-    fetchAvailableTeams();
-  }, [tournamentId]);
+    if (isOpen) {
+      fetchAvailableTeams();
+    }
+  }, [isOpen, tournamentId]);
 
   const fetchAvailableTeams = async () => {
     try {
+      setIsFetching(true);
+      
+      // Get teams that are already in the tournament
       const { data: existingTeams, error: existingError } = await supabase
         .from('tournament_teams')
         .select('team_id')
@@ -45,15 +52,21 @@ export const AddTeamsDialog = ({ tournamentId, onTeamsAdded }: AddTeamsDialogPro
 
       if (existingError) throw existingError;
 
-      const existingTeamIds = existingTeams.map(t => t.team_id);
-
-      const { data: allTeams, error } = await supabase
-        .from('teams')
-        .select('*')
-        .not('id', 'in', `(${existingTeamIds.length ? existingTeamIds.join(',') : '00000000-0000-0000-0000-000000000000'})`);
+      const existingTeamIds = existingTeams?.map(t => t.team_id) || [];
+      
+      // Fetch teams that are not already in the tournament
+      let query = supabase.from('teams').select('*');
+      
+      if (existingTeamIds.length > 0) {
+        query = query.not('id', 'in', `(${existingTeamIds.join(',')})`);
+      }
+      
+      const { data: allTeams, error } = await query;
 
       if (error) throw error;
-      setTeams(allTeams);
+      
+      setTeams(allTeams || []);
+      console.log('Available teams:', allTeams);
     } catch (error) {
       console.error('Error fetching teams:', error);
       toast({
@@ -61,11 +74,20 @@ export const AddTeamsDialog = ({ tournamentId, onTeamsAdded }: AddTeamsDialogPro
         description: "Failed to load available teams",
         variant: "destructive",
       });
+    } finally {
+      setIsFetching(false);
     }
   };
 
   const handleAddTeams = async () => {
-    if (selectedTeams.length === 0) return;
+    if (selectedTeams.length === 0) {
+      toast({
+        title: "No teams selected",
+        description: "Please select at least one team to add",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsLoading(true);
     try {
@@ -100,8 +122,15 @@ export const AddTeamsDialog = ({ tournamentId, onTeamsAdded }: AddTeamsDialogPro
     }
   };
 
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (!open) {
+      setSelectedTeams([]);
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button>
           <Plus className="mr-2 h-4 w-4" />
@@ -111,29 +140,44 @@ export const AddTeamsDialog = ({ tournamentId, onTeamsAdded }: AddTeamsDialogPro
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add Teams to Tournament</DialogTitle>
+          <DialogDescription>
+            Select teams to add to this tournament.
+          </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="max-h-[60vh] mt-4">
-          <div className="space-y-4">
-            {teams.map((team) => (
-              <div key={team.id} className="flex items-center space-x-2">
-                <Checkbox
-                  id={team.id}
-                  checked={selectedTeams.includes(team.id)}
-                  onCheckedChange={(checked) => {
-                    setSelectedTeams(prev =>
-                      checked
-                        ? [...prev, team.id]
-                        : prev.filter(id => id !== team.id)
-                    );
-                  }}
-                />
-                <label htmlFor={team.id} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                  {team.name} - {team.college}
-                </label>
-              </div>
-            ))}
+        
+        {isFetching ? (
+          <div className="flex justify-center items-center py-8">
+            <p>Loading available teams...</p>
           </div>
-        </ScrollArea>
+        ) : teams.length === 0 ? (
+          <div className="text-center p-6">
+            <p className="text-muted-foreground">No available teams found. All teams may already be added to this tournament.</p>
+          </div>
+        ) : (
+          <ScrollArea className="max-h-[60vh] mt-4">
+            <div className="space-y-4">
+              {teams.map((team) => (
+                <div key={team.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={team.id}
+                    checked={selectedTeams.includes(team.id)}
+                    onCheckedChange={(checked) => {
+                      setSelectedTeams(prev =>
+                        checked
+                          ? [...prev, team.id]
+                          : prev.filter(id => id !== team.id)
+                      );
+                    }}
+                  />
+                  <label htmlFor={team.id} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    {team.name} - {team.college}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        )}
+        
         <div className="mt-4 flex justify-end space-x-2">
           <Button
             variant="outline"
