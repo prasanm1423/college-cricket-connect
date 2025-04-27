@@ -24,6 +24,15 @@ const PlayerCard = ({ player, onClick, className }: PlayerCardProps) => {
     }
   };
 
+  // Default stats if they're not available
+  const stats = player.stats || {
+    runs: 0,
+    wickets: 0,
+    matches: 0,
+    highestScore: 0,
+    bestBowling: "0/0"
+  };
+
   return (
     <Card 
       className={cn("overflow-hidden cursor-pointer hover:shadow-md transition-shadow", className)}
@@ -48,11 +57,11 @@ const PlayerCard = ({ player, onClick, className }: PlayerCardProps) => {
         <div className="grid grid-cols-2 gap-2">
           <div className="stat-box">
             <span className="text-xs text-muted-foreground">Runs</span>
-            <span className="font-bold">{player.stats.runs}</span>
+            <span className="font-bold">{stats.runs}</span>
           </div>
           <div className="stat-box">
             <span className="text-xs text-muted-foreground">Wickets</span>
-            <span className="font-bold">{player.stats.wickets}</span>
+            <span className="font-bold">{stats.wickets}</span>
           </div>
         </div>
       </div>

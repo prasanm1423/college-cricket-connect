@@ -28,7 +28,7 @@ const playerSchema = z.object({
   role: z.string().min(1, "Player role is required"),
   age: z.string()
     .min(1, "Age is required")
-    .transform(val => parseInt(val))
+    .transform(val => parseInt(val, 10))
     .refine(val => !isNaN(val) && val > 0, {
       message: "Age must be a positive number"
     }),
@@ -78,7 +78,22 @@ const Players = () => {
       }
       
       console.log("Players fetched:", data);
-      setPlayers(data || []);
+      
+      // Add default stats to each player
+      const playersWithStats = data?.map(player => ({
+        ...player,
+        stats: {
+          runs: 0,
+          wickets: 0,
+          matches: 0,
+          highestScore: 0,
+          bestBowling: "0/0"
+        },
+        // Add imageUrl property with default value
+        imageUrl: null
+      })) || [];
+      
+      setPlayers(playersWithStats);
     } catch (error) {
       console.error("Error fetching players:", error);
       toast({
@@ -125,7 +140,7 @@ const Players = () => {
         college: values.college,
         role: values.role,
         age: values.age,
-        team_id: values.team_id || null,
+        team_id: values.team_id === "no-team" ? null : values.team_id,
       };
       
       const { data, error } = await supabase
@@ -162,7 +177,7 @@ const Players = () => {
   const filteredPlayers = players.filter(player => {
     const matchesSearch = player.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          player.college.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = !roleFilter || player.role === roleFilter;
+    const matchesRole = !roleFilter || roleFilter === "all" || player.role === roleFilter;
     return matchesSearch && matchesRole;
   });
   
