@@ -77,6 +77,7 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           id: string
+          image_url: string | null
           name: string
           role: string
           team_id: string | null
@@ -87,6 +88,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           id?: string
+          image_url?: string | null
           name: string
           role: string
           team_id?: string | null
@@ -97,6 +99,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           id?: string
+          image_url?: string | null
           name?: string
           role?: string
           team_id?: string | null
@@ -118,6 +121,7 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           id: string
+          image_url: string | null
           name: string
         }
         Insert: {
@@ -126,6 +130,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           id?: string
+          image_url?: string | null
           name: string
         }
         Update: {
@@ -134,6 +139,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           id?: string
+          image_url?: string | null
           name?: string
         }
         Relationships: [
@@ -191,6 +197,7 @@ export type Database = {
           created_by: string | null
           end_date: string
           id: string
+          image_url: string | null
           location: string
           name: string
           start_date: string
@@ -203,6 +210,7 @@ export type Database = {
           created_by?: string | null
           end_date: string
           id?: string
+          image_url?: string | null
           location: string
           name: string
           start_date: string
@@ -215,6 +223,7 @@ export type Database = {
           created_by?: string | null
           end_date?: string
           id?: string
+          image_url?: string | null
           location?: string
           name?: string
           start_date?: string

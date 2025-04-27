@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Search } from "lucide-react";
@@ -21,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import ImageUpload from "@/components/shared/ImageUpload";
 
 const playerSchema = z.object({
   name: z.string().min(1, "Player name is required"),
@@ -35,7 +35,14 @@ const playerSchema = z.object({
   team_id: z.string().optional(),
 });
 
-type PlayerFormValues = z.infer<typeof playerSchema>;
+interface PlayerFormValues {
+  name: string;
+  college: string;
+  role: string;
+  age: string;
+  team_id?: string;
+  image_url?: string;
+}
 
 const Players = () => {
   const navigate = useNavigate();
@@ -55,6 +62,7 @@ const Players = () => {
       role: "",
       age: "",
       team_id: undefined,
+      image_url: undefined,
     },
   });
   
@@ -79,7 +87,6 @@ const Players = () => {
       
       console.log("Players fetched:", data);
       
-      // Add default stats to each player
       const playersWithStats = data?.map(player => ({
         ...player,
         stats: {
@@ -89,7 +96,6 @@ const Players = () => {
           highestScore: 0,
           bestBowling: "0/0"
         },
-        // Add imageUrl property with default value
         imageUrl: null
       })) || [];
       
@@ -139,8 +145,9 @@ const Players = () => {
         name: values.name,
         college: values.college,
         role: values.role,
-        age: values.age,
+        age: parseInt(values.age, 10),
         team_id: values.team_id === "no-team" ? null : values.team_id,
+        image_url: values.image_url,
       };
       
       const { data, error } = await supabase
@@ -173,7 +180,6 @@ const Players = () => {
     }
   };
   
-  // Filter players based on search term and role filter
   const filteredPlayers = players.filter(player => {
     const matchesSearch = player.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          player.college.toLowerCase().includes(searchTerm.toLowerCase());
@@ -200,6 +206,12 @@ const Players = () => {
               </DialogHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <ImageUpload 
+                    bucketName="player-images"
+                    onImageUploaded={(url) => form.setValue('image_url', url)}
+                    currentImageUrl={form.watch('image_url')}
+                  />
+
                   <FormField
                     control={form.control}
                     name="name"

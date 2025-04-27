@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Search } from "lucide-react";
@@ -14,13 +13,18 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import ImageUpload from "@/components/shared/ImageUpload";
 
 const teamSchema = z.object({
   name: z.string().min(1, "Team name is required"),
   college: z.string().min(1, "College name is required"),
 });
 
-type TeamFormValues = z.infer<typeof teamSchema>;
+interface TeamFormValues {
+  name: string;
+  college: string;
+  image_url?: string;
+}
 
 const Teams = () => {
   const navigate = useNavigate();
@@ -35,6 +39,7 @@ const Teams = () => {
     defaultValues: {
       name: "",
       college: "",
+      image_url: undefined,
     },
   });
   
@@ -79,6 +84,7 @@ const Teams = () => {
         .insert([{
           name: values.name,
           college: values.college,
+          image_url: values.image_url,
         }])
         .select();
       
@@ -107,14 +113,12 @@ const Teams = () => {
     }
   };
   
-  // Filter teams based on search term
   const filteredTeams = teams.filter(team => {
     const matchesSearch = team.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          team.college.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
 
-  // Process teams to ensure they have the right structure for TeamCard
   const processedTeams = filteredTeams.map(team => ({
     ...team,
     stats: {
@@ -144,6 +148,12 @@ const Teams = () => {
               </DialogHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <ImageUpload 
+                    bucketName="team-images"
+                    onImageUploaded={(url) => form.setValue('image_url', url)}
+                    currentImageUrl={form.watch('image_url')}
+                  />
+
                   <FormField
                     control={form.control}
                     name="name"

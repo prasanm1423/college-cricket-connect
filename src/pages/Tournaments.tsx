@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Search } from "lucide-react";
@@ -35,6 +34,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PageHeader from "@/components/shared/PageHeader";
+import ImageUpload from "@/components/shared/ImageUpload";
 
 type TournamentStatus = 'upcoming' | 'ongoing' | 'completed';
 
@@ -61,15 +61,14 @@ const Tournaments = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Form state for creating tournament
   const [tournamentName, setTournamentName] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [location, setLocation] = useState("");
   const [teamCount, setTeamCount] = useState("8");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [tournamentImageUrl, setTournamentImageUrl] = useState<string | null>(null);
 
-  // Fetch tournaments from Supabase
   useEffect(() => {
     fetchTournaments();
   }, []);
@@ -84,7 +83,6 @@ const Tournaments = () => {
 
       if (error) throw error;
       
-      // Map and validate tournament status
       const validatedTournaments = (data || []).map(tournament => ({
         ...tournament,
         status: validateTournamentStatus(tournament.status)
@@ -103,12 +101,11 @@ const Tournaments = () => {
     }
   };
   
-  // Helper function to validate tournament status
   const validateTournamentStatus = (status: string): TournamentStatus => {
     if (status === "upcoming" || status === "ongoing" || status === "completed") {
       return status;
     }
-    return "upcoming"; // Default to upcoming if invalid status
+    return "upcoming";
   };
   
   const handleCreateTournament = async (e: React.FormEvent) => {
@@ -135,7 +132,8 @@ const Tournaments = () => {
           location,
           status: 'upcoming',
           team_count: parseInt(teamCount),
-          created_by: user.id
+          created_by: user.id,
+          image_url: tournamentImageUrl,
         }])
         .select()
         .single();
@@ -155,14 +153,12 @@ const Tournaments = () => {
         description: `${tournamentName} has been created successfully.`,
       });
       
-      // Reset form
       setTournamentName("");
       setStartDate("");
       setEndDate("");
       setLocation("");
       setTeamCount("8");
       
-      // Close dialog
       setIsDialogOpen(false);
     } catch (error) {
       console.error("Error creating tournament:", error);
@@ -176,7 +172,6 @@ const Tournaments = () => {
     }
   };
   
-  // Filter tournaments based on search term
   const filteredTournaments = tournaments.filter(tournament => 
     tournament.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     tournament.location.toLowerCase().includes(searchTerm.toLowerCase())
@@ -209,6 +204,13 @@ const Tournaments = () => {
               
               <form onSubmit={handleCreateTournament}>
                 <div className="grid gap-4 py-4">
+                  <ImageUpload 
+                    bucketName="tournament-images"
+                    onImageUploaded={setTournamentImageUrl}
+                    currentImageUrl={tournamentImageUrl}
+                    className="mb-4"
+                  />
+
                   <div className="grid gap-2">
                     <Label htmlFor="tournament-name">Tournament Name</Label>
                     <Input
