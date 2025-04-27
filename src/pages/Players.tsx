@@ -269,7 +269,7 @@ const Players = () => {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="">No Team</SelectItem>
+                            <SelectItem value="no-team">No Team</SelectItem>
                             {teams.map((team) => (
                               <SelectItem key={team.id} value={team.id}>
                                 {team.name} - {team.college}
@@ -318,7 +318,7 @@ const Players = () => {
             <SelectValue placeholder="Filter by role" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={undefined as any}>All roles</SelectItem>
+            <SelectItem value="all">All roles</SelectItem>
             <SelectItem value="batsman">Batsman</SelectItem>
             <SelectItem value="bowler">Bowler</SelectItem>
             <SelectItem value="all-rounder">All-rounder</SelectItem>
