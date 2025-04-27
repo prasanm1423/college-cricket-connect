@@ -1,9 +1,31 @@
 
 import React from "react";
-import { Team, getTeamPlayers } from "@/data/mockData";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Shield, Award } from "lucide-react";
+
+interface TeamStats {
+  matches?: number;
+  won?: number;
+  lost?: number;
+  draw?: number;
+}
+
+interface Team {
+  id: string;
+  name: string;
+  college: string;
+  captain?: string | null;
+  logoUrl?: string;
+  stats?: TeamStats;
+  created_at?: string;
+  created_by?: string | null;
+}
+
+interface Player {
+  id: string;
+  name: string;
+}
 
 interface TeamCardProps {
   team: Team;
@@ -12,7 +34,11 @@ interface TeamCardProps {
 }
 
 const TeamCard = ({ team, onClick, className }: TeamCardProps) => {
-  const players = getTeamPlayers(team.id);
+  // Initialize empty array for players if getTeamPlayers function is not available
+  const players: Player[] = [];
+  
+  // Create default stats object if not provided
+  const stats: TeamStats = team.stats || { matches: 0, won: 0, lost: 0, draw: 0 };
   
   return (
     <Card 
@@ -59,18 +85,18 @@ const TeamCard = ({ team, onClick, className }: TeamCardProps) => {
         <div className="grid grid-cols-2 gap-2">
           <div className="stat-box">
             <span className="text-xs text-muted-foreground">Matches</span>
-            <span className="font-bold">{team.stats.matches}</span>
+            <span className="font-bold">{stats.matches}</span>
           </div>
           <div className="stat-box">
             <span className="text-xs text-muted-foreground">Won</span>
-            <span className="font-bold">{team.stats.won}</span>
+            <span className="font-bold">{stats.won}</span>
           </div>
         </div>
         
         {team.captain && (
           <div className="mt-3 flex items-center text-sm text-muted-foreground">
             <Award size={16} className="mr-1 text-cricket-accent" />
-            Captain: {getTeamPlayers(team.id).find(p => p.id === team.captain)?.name}
+            Captain: {team.captain}
           </div>
         )}
       </div>

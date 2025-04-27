@@ -113,6 +113,17 @@ const Teams = () => {
                          team.college.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
+
+  // Process teams to ensure they have the right structure for TeamCard
+  const processedTeams = filteredTeams.map(team => ({
+    ...team,
+    stats: {
+      matches: 0,
+      won: 0,
+      lost: 0,
+      draw: 0
+    }
+  }));
   
   return (
     <div>
@@ -194,9 +205,9 @@ const Teams = () => {
         <div className="text-center p-12">
           <p>Loading teams...</p>
         </div>
-      ) : filteredTeams.length > 0 ? (
+      ) : processedTeams.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filteredTeams.map((team) => (
+          {processedTeams.map((team) => (
             <TeamCard 
               key={team.id} 
               team={team} 
