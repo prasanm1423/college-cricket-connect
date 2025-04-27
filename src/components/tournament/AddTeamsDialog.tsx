@@ -43,6 +43,7 @@ export const AddTeamsDialog = ({ tournamentId, onTeamsAdded }: AddTeamsDialogPro
   const fetchAvailableTeams = async () => {
     try {
       setIsFetching(true);
+      console.log('Fetching available teams for tournament:', tournamentId);
       
       // Get teams that are already in the tournament
       const { data: existingTeams, error: existingError } = await supabase
@@ -50,23 +51,33 @@ export const AddTeamsDialog = ({ tournamentId, onTeamsAdded }: AddTeamsDialogPro
         .select('team_id')
         .eq('tournament_id', tournamentId);
 
-      if (existingError) throw existingError;
+      if (existingError) {
+        console.error('Error fetching existing teams:', existingError);
+        throw existingError;
+      }
 
+      console.log('Existing team IDs:', existingTeams);
       const existingTeamIds = existingTeams?.map(t => t.team_id) || [];
       
-      // Fetch teams that are not already in the tournament
-      let query = supabase.from('teams').select('*');
-      
-      if (existingTeamIds.length > 0) {
-        query = query.not('id', 'in', `(${existingTeamIds.join(',')})`);
-      }
-      
-      const { data: allTeams, error } = await query;
+      // Fetch all teams
+      const { data: allTeams, error } = await supabase
+        .from('teams')
+        .select('*');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching teams:', error);
+        throw error;
+      }
+
+      console.log('All teams:', allTeams);
       
-      setTeams(allTeams || []);
-      console.log('Available teams:', allTeams);
+      // Filter out teams that are already in the tournament
+      const availableTeams = allTeams?.filter(team => 
+        !existingTeamIds.includes(team.id)
+      ) || [];
+      
+      console.log('Available teams:', availableTeams);
+      setTeams(availableTeams);
     } catch (error) {
       console.error('Error fetching teams:', error);
       toast({
@@ -90,6 +101,8 @@ export const AddTeamsDialog = ({ tournamentId, onTeamsAdded }: AddTeamsDialogPro
     }
     
     setIsLoading(true);
+    console.log('Adding teams to tournament:', selectedTeams);
+    
     try {
       const { error } = await supabase
         .from('tournament_teams')
@@ -100,8 +113,12 @@ export const AddTeamsDialog = ({ tournamentId, onTeamsAdded }: AddTeamsDialogPro
           }))
         );
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error adding teams:', error);
+        throw error;
+      }
 
+      console.log('Teams added successfully');
       toast({
         title: "Success",
         description: "Teams added to tournament successfully",

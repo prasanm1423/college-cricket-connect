@@ -25,7 +25,9 @@ export const TeamList = ({ teams, tournamentId, onTeamRemoved }: TeamListProps) 
 
   const handleRemoveTeam = async (teamId: string) => {
     try {
-      // Check if the team exists in the tournament_teams table
+      console.log(`Attempting to remove team ${teamId} from tournament ${tournamentId}`);
+      
+      // First check if the team exists in the tournament_teams table
       const { data: existingTeam, error: checkError } = await supabase
         .from('tournament_teams')
         .select('*')
@@ -33,12 +35,16 @@ export const TeamList = ({ teams, tournamentId, onTeamRemoved }: TeamListProps) 
         .eq('team_id', teamId)
         .single();
         
-      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is the error code for no rows returned
-        throw checkError;
+      if (checkError) {
+        console.error('Error checking team association:', checkError);
+        if (checkError.code !== 'PGRST116') { // PGRST116 is the error code for no rows returned
+          throw checkError;
+        }
       }
       
       // If the team doesn't exist in the tournament_teams table, show error
       if (!existingTeam) {
+        console.log('Team not associated with tournament in database');
         toast({
           title: "Error",
           description: "Team is not associated with this tournament in the database",
@@ -49,6 +55,8 @@ export const TeamList = ({ teams, tournamentId, onTeamRemoved }: TeamListProps) 
         return;
       }
       
+      console.log('Found team association, proceeding with removal');
+      
       // If the team exists, proceed with removal
       const { error } = await supabase
         .from('tournament_teams')
@@ -56,8 +64,12 @@ export const TeamList = ({ teams, tournamentId, onTeamRemoved }: TeamListProps) 
         .eq('tournament_id', tournamentId)
         .eq('team_id', teamId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error removing team from tournament:', error);
+        throw error;
+      }
 
+      console.log('Team removed successfully');
       toast({
         title: "Success",
         description: "Team removed from tournament",
